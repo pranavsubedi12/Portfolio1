@@ -1,6 +1,37 @@
 import { Mail, MapPin, Github, Linkedin, Send, Instagram } from 'lucide-react';
+import { useState } from 'react';
 
 const Contact = () => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const form = e.currentTarget;
+      const response = await fetch('https://formspree.io/f/mdkyneza', { 
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        form.reset();
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const contactInfo = [
     {
       icon: <Mail className="text-cyan-400" size={24} />,
@@ -110,7 +141,7 @@ const Contact = () => {
 
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-8">
             <h3 className="text-2xl font-bold mb-6">Send a Message</h3>
-            <form className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                   Name
@@ -118,6 +149,8 @@ const Contact = () => {
                 <input
                   type="text"
                   id="name"
+                  name="name"
+                  required
                   className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-cyan-500 transition-colors text-white"
                   placeholder="Your name"
                 />
@@ -130,6 +163,8 @@ const Contact = () => {
                 <input
                   type="email"
                   id="email"
+                  name="email"
+                  required
                   className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-cyan-500 transition-colors text-white"
                   placeholder="your.email@example.com"
                 />
@@ -141,18 +176,35 @@ const Contact = () => {
                 </label>
                 <textarea
                   id="message"
+                  name="message"
                   rows={5}
+                  required
                   className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg focus:outline-none focus:border-cyan-500 transition-colors text-white resize-none"
                   placeholder="Your message..."
                 ></textarea>
               </div>
 
+              {submitStatus === 'success' && (
+                <div className="p-3 rounded-lg bg-green-500/20 border border-green-500 text-green-400">
+                  Thank you! Your message has been sent successfully.
+                </div>
+              )}
+
+              {submitStatus === 'error' && (
+                <div className="p-3 rounded-lg bg-red-500/20 border border-red-500 text-red-400">
+                  Sorry, there was an error sending your message. Please try again.
+                </div>
+              )}
+
               <button
                 type="submit"
-                className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg font-medium transition-all transform hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/30"
+                disabled={isSubmitting}
+                className={`w-full flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 rounded-lg font-medium transition-all transform hover:scale-105 hover:shadow-xl hover:shadow-cyan-500/30 ${
+                  isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                }`}
               >
-                <Send size={20} />
-                <span>Send Message</span>
+                <Send size={20} className={isSubmitting ? 'animate-spin' : ''} />
+                <span>{isSubmitting ? 'Sending...' : 'Send Message'}</span>
               </button>
             </form>
           </div>
